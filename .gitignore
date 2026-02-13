@@ -1,0 +1,23 @@
+# OS / Explorer
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python cache / env
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local temp / generated during analysis
+temp_check.js
+rules-page-*.png
+
+# Logs
+*.log

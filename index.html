@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Field Coordinate Meter</title>
+  <style>
+    :root {
+      --bg-1: #f2f7ff;
+      --bg-2: #dfeeff;
+      --card: #ffffff;
+      --text: #162131;
+      --muted: #4f6178;
+      --accent: #0077ff;
+      --accent-2: #00a39b;
+      --line: rgba(22, 33, 49, 0.2);
+      --shadow: 0 12px 28px rgba(22, 33, 49, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 12% 12%, var(--bg-2), var(--bg-1) 55%);
+      padding: 18px;
+    }
+
+    .app {
+      width: min(96vw, 1500px);
+      max-width: 1500px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: max-content clamp(260px, 28vw, 420px);
+      gap: 8px;
+      align-items: start;
+      justify-content: center;
+    }
+
+    .left-col {
+      width: fit-content;
+      --board-max: clamp(300px, 44vw, 560px);
+    }
+
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat {
+      background: #f7faff;
+      border: 1px solid #dde9f8;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-variant-numeric: tabular-nums;
+      min-width: 0;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .value {
+      font-weight: 600;
+    }
+
+    .control {
+      background: #f7faff;
+      border: 1px solid #dde9f8;
+      border-radius: 10px;
+      padding: 9px 11px;
+    }
+
+    .control .label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    select {
+      border: 1px solid #c5d9f4;
+      border-radius: 8px;
+      padding: 6px 9px;
+      background: #fff;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .control select {
+      width: 100%;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .board {
+      position: relative;
+      width: var(--board-max);
+      max-width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #cfdef3;
+      background: #ecf4ff;
+      line-height: 0;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .board img {
+      width: 100%;
+      height: auto;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .wall-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .inner-wall-path {
+      stroke: #000;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      stroke-linejoin: miter;
+    }
+
+    .cross {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 120ms ease;
+      z-index: 4;
+    }
+
+    .cross.show {
+      opacity: 1;
+    }
+
+    .cross.v {
+      width: 2px;
+      top: 0;
+      bottom: 0;
+      transform: translateX(-50%);
+      background: rgba(0, 119, 255, 0.72);
+    }
+
+    .cross.h {
+      height: 2px;
+      left: 0;
+      right: 0;
+      transform: translateY(-50%);
+      background: rgba(0, 119, 255, 0.72);
+    }
+
+    .lines-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .point-link {
+      stroke: rgba(22, 33, 49, 0.42);
+      stroke-width: 1;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .points-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .point-marker {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: var(--accent-2);
+      margin: -6px 0 0 -6px;
+      box-shadow: 0 0 0 2px rgba(0, 163, 155, 0.35);
+    }
+
+    .point-marker.latest {
+      background: #ff7a00;
+      box-shadow: 0 0 0 2px rgba(255, 122, 0, 0.35);
+    }
+
+    .point-index {
+      position: absolute;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: rgba(22, 33, 49, 0.88);
+      color: #fff;
+      font-size: 10px;
+      line-height: 16px;
+      font-weight: 700;
+      text-align: center;
+      transform: translate(8px, -12px);
+      white-space: nowrap;
+    }
+
+    .size-mode {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .size-buttons {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .size-btn {
+      min-width: 40px;
+      border: 1px solid #c5d9f4;
+      border-radius: 8px;
+      padding: 5px 10px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .size-btn.active {
+      background: #e7f1ff;
+      border-color: #90bcff;
+      color: #0a4aa8;
+    }
+
+    .points-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .points-count {
+      font-size: 0.84rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .clear-btn {
+      border: 1px solid #c5d9f4;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 4px 10px;
+    }
+
+    .points-list {
+      margin: 0;
+      padding-left: 18px;
+      max-height: 180px;
+      overflow: auto;
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .points-list li {
+      margin: 0 0 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wall-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .wall-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .wall-item select {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .wall-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mini-btn {
+      border: 1px solid #c5d9f4;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 4px 10px;
+    }
+
+    .wall-note {
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    @media (max-width: 920px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .left-col {
+        width: 100%;
+      }
+
+      .board {
+        width: min(100%, var(--board-max));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="workspace">
+      <div class="left-col">
+        <section class="board" id="board">
+          <img id="fieldImage" src="field-web.png" alt="Field map" />
+          <svg class="wall-overlay" id="wallOverlay" aria-hidden="true"></svg>
+          <div class="cross v" id="crossV"></div>
+          <div class="cross h" id="crossH"></div>
+          <svg class="lines-layer" id="linesLayer" aria-hidden="true"></svg>
+          <div class="points-layer" id="pointsLayer"></div>
+        </section>
+
+        <div class="size-mode" id="sizeMode">
+          <span class="label">Size</span>
+          <div class="size-buttons">
+            <button type="button" class="size-btn active" data-size="s">S</button>
+            <button type="button" class="size-btn" data-size="m">M</button>
+            <button type="button" class="size-btn" data-size="l">L</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="right-col">
+        <div class="control-row">
+          <div class="control">
+            <label for="unitSelect" class="label">Units</label>
+            <select id="unitSelect">
+              <option value="mm" selected>Millimeters (mm)</option>
+              <option value="cm">Centimeters (cm)</option>
+              <option value="m">Meters (m)</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label for="snapSelect" class="label">Snap Grid (Invisible)</label>
+            <select id="snapSelect">
+              <option value="off">Off</option>
+              <option value="0.01">10 mm</option>
+              <option value="0.05">50 mm</option>
+              <option value="0.1" selected>100 mm</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control">
+          <div class="label">Open Challenge Inner Walls</div>
+          <div class="wall-grid">
+            <label class="wall-item">Top
+              <select id="wallTopSelect">
+                <option value="1" selected>1000 mm</option>
+                <option value="0.6">600 mm</option>
+              </select>
+            </label>
+            <label class="wall-item">Right
+              <select id="wallRightSelect">
+                <option value="1" selected>1000 mm</option>
+                <option value="0.6">600 mm</option>
+              </select>
+            </label>
+            <label class="wall-item">Bottom
+              <select id="wallBottomSelect">
+                <option value="1" selected>1000 mm</option>
+                <option value="0.6">600 mm</option>
+              </select>
+            </label>
+            <label class="wall-item">Left
+              <select id="wallLeftSelect">
+                <option value="1" selected>1000 mm</option>
+                <option value="0.6">600 mm</option>
+              </select>
+            </label>
+          </div>
+          <div class="wall-row">
+            <button type="button" class="mini-btn" id="randomWallsBtn">Random Toss</button>
+          </div>
+          <p class="wall-note">Per rules: each section is wide (1000 mm) or narrow (600 mm).</p>
+        </div>
+
+        <div class="stat">
+          <div class="label">Live (x, y)</div>
+          <div class="value" id="liveValue">x: -, y: -</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Locked (x, y)</div>
+          <div class="value" id="lockedValue">x: -, y: -</div>
+        </div>
+
+        <div class="control">
+          <div class="label">Points</div>
+          <div class="points-header">
+            <span class="points-count" id="pointsCount">0 points</span>
+            <button type="button" class="clear-btn" id="clearPointsBtn">Clear</button>
+          </div>
+          <ol class="points-list" id="pointsList"></ol>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var FIELD_SIZE_M = 3.2;
+      var COORD_MIN_M = -0.1;
+      var COORD_SPAN_M = FIELD_SIZE_M;
+      var INNER_WALL_THICKNESS_M = 0.02;
+      var OPEN_WALL_WIDE_M = 1.0;
+      var OPEN_WALL_NARROW_M = 0.6;
+      var UNIT_CONFIG = {
+        m: { factor: 1, decimals: 3, label: "m" },
+        cm: { factor: 100, decimals: 1, label: "cm" },
+        mm: { factor: 1000, decimals: 0, label: "mm" }
+      };
+
+      var board = document.getElementById("board");
+      var fieldImage = document.getElementById("fieldImage");
+      var liveValue = document.getElementById("liveValue");
+      var lockedValue = document.getElementById("lockedValue");
+      var unitSelect = document.getElementById("unitSelect");
+      var snapSelect = document.getElementById("snapSelect");
+      var wallOverlay = document.getElementById("wallOverlay");
+      var crossV = document.getElementById("crossV");
+      var crossH = document.getElementById("crossH");
+      var linesLayer = document.getElementById("linesLayer");
+      var pointsLayer = document.getElementById("pointsLayer");
+      var leftCol = document.querySelector(".left-col");
+      var sizeMode = document.getElementById("sizeMode");
+      var pointsCount = document.getElementById("pointsCount");
+      var pointsList = document.getElementById("pointsList");
+      var clearPointsBtn = document.getElementById("clearPointsBtn");
+      var wallTopSelect = document.getElementById("wallTopSelect");
+      var wallRightSelect = document.getElementById("wallRightSelect");
+      var wallBottomSelect = document.getElementById("wallBottomSelect");
+      var wallLeftSelect = document.getElementById("wallLeftSelect");
+      var randomWallsBtn = document.getElementById("randomWallsBtn");
+
+      var SIZE_CONFIG = {
+        s: "clamp(300px, 44vw, 560px)",
+        m: "clamp(420px, 58vw, 760px)",
+        l: "clamp(520px, 72vw, 980px)"
+      };
+
+      var lastHoverNorm = null;
+      var lastHoverRawNorm = null;
+      var hoverVisible = false;
+      var points = [];
+
+      function clamp(v, min, max) {
+        return Math.min(Math.max(v, min), max);
+      }
+
+      function toMeters(normX, normY) {
+        var x = COORD_MIN_M + normX * COORD_SPAN_M;
+        var y = COORD_MIN_M + (1 - normY) * COORD_SPAN_M;
+        return { x: x, y: y };
+      }
+
+      function getActiveUnit() {
+        return UNIT_CONFIG[unitSelect.value] || UNIT_CONFIG.mm;
+      }
+
+      function formatPoint(point) {
+        var unit = getActiveUnit();
+        var xValue = point.x * unit.factor;
+        var yValue = point.y * unit.factor;
+        return "x: " + xValue.toFixed(unit.decimals) + " " + unit.label + ", y: " + yValue.toFixed(unit.decimals) + " " + unit.label;
+      }
+
+      function getSnapStepM() {
+        var value = parseFloat(snapSelect.value);
+        if (!Number.isFinite(value) || value <= 0) {
+          return 0;
+        }
+        return value;
+      }
+
+      function snapNorm(norm) {
+        var stepM = getSnapStepM();
+        if (stepM <= 0) {
+          return clamp(norm, 0, 1);
+        }
+        var stepNorm = stepM / COORD_SPAN_M;
+        if (stepNorm <= 0) {
+          return clamp(norm, 0, 1);
+        }
+        return clamp(Math.round(norm / stepNorm) * stepNorm, 0, 1);
+      }
+
+      function applySnap(normX, normY) {
+        return {
+          normX: snapNorm(normX),
+          normY: snapNorm(normY)
+        };
+      }
+
+      function getBoardMetrics() {
+        var rect = board.getBoundingClientRect();
+        var width = board.clientWidth;
+        var height = board.clientHeight;
+        if (!width || !height) {
+          return null;
+        }
+        return {
+          left: rect.left + board.clientLeft,
+          top: rect.top + board.clientTop,
+          width: width,
+          height: height
+        };
+      }
+
+      function parseWallDistance(selectEl) {
+        var v = parseFloat(selectEl.value);
+        if (!Number.isFinite(v) || v <= 0) {
+          return OPEN_WALL_WIDE_M;
+        }
+        return v;
+      }
+
+      function getWallDistances() {
+        return {
+          top: parseWallDistance(wallTopSelect),
+          right: parseWallDistance(wallRightSelect),
+          bottom: parseWallDistance(wallBottomSelect),
+          left: parseWallDistance(wallLeftSelect)
+        };
+      }
+
+      function randomizeOpenWalls() {
+        var values = [String(OPEN_WALL_WIDE_M), String(OPEN_WALL_NARROW_M)];
+        wallTopSelect.value = values[Math.floor(Math.random() * 2)];
+        wallRightSelect.value = values[Math.floor(Math.random() * 2)];
+        wallBottomSelect.value = values[Math.floor(Math.random() * 2)];
+        wallLeftSelect.value = values[Math.floor(Math.random() * 2)];
+      }
+
+      function updateWallOverlay(metrics) {
+        var m = metrics || getBoardMetrics();
+        if (!m) {
+          return;
+        }
+        var d = getWallDistances();
+        var x1 = (d.left / FIELD_SIZE_M) * m.width;
+        var x2 = m.width - (d.right / FIELD_SIZE_M) * m.width;
+        var y1 = (d.top / FIELD_SIZE_M) * m.height;
+        var y2 = m.height - (d.bottom / FIELD_SIZE_M) * m.height;
+
+        wallOverlay.setAttribute("viewBox", "0 0 " + m.width + " " + m.height);
+        wallOverlay.innerHTML = "";
+        if (x2 <= x1 || y2 <= y1) {
+          return;
+        }
+
+        var wallPx = Math.max(1, (INNER_WALL_THICKNESS_M / FIELD_SIZE_M) * Math.min(m.width, m.height));
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("class", "inner-wall-path");
+        path.setAttribute("stroke-width", wallPx.toFixed(2));
+        path.setAttribute(
+          "d",
+          "M " + x1.toFixed(2) + " " + y1.toFixed(2) +
+          " L " + x2.toFixed(2) + " " + y1.toFixed(2) +
+          " L " + x2.toFixed(2) + " " + y2.toFixed(2) +
+          " L " + x1.toFixed(2) + " " + y2.toFixed(2) + " Z"
+        );
+        wallOverlay.appendChild(path);
+      }
+
+      function ensureInitialWallOverlay(attemptsLeft) {
+        if (getBoardMetrics()) {
+          updateWallOverlay();
+          return;
+        }
+        if (attemptsLeft <= 0) {
+          return;
+        }
+        window.requestAnimationFrame(function () {
+          ensureInitialWallOverlay(attemptsLeft - 1);
+        });
+      }
+
+      function updateCrossFromNorm() {
+        if (!hoverVisible || !lastHoverNorm) {
+          return;
+        }
+        var metrics = getBoardMetrics();
+        if (!metrics) {
+          return;
+        }
+        var pxX = lastHoverNorm.normX * metrics.width;
+        var pxY = lastHoverNorm.normY * metrics.height;
+        showCross(pxX, pxY);
+      }
+
+      function setSizeMode(mode) {
+        var key = SIZE_CONFIG[mode] ? mode : "s";
+        leftCol.style.setProperty("--board-max", SIZE_CONFIG[key]);
+
+        var buttons = sizeMode.querySelectorAll(".size-btn");
+        buttons.forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-size") === key);
+        });
+
+        updateWallOverlay();
+        updateCrossFromNorm();
+        updatePointsFromNorm();
+      }
+
+      function getPointFromEvent(ev) {
+        var metrics = getBoardMetrics();
+        if (!metrics) {
+          return null;
+        }
+        var pxX = clamp(ev.clientX - metrics.left, 0, metrics.width);
+        var pxY = clamp(ev.clientY - metrics.top, 0, metrics.height);
+        return {
+          pxX: pxX,
+          pxY: pxY,
+          normX: pxX / metrics.width,
+          normY: pxY / metrics.height,
+          areaWidth: metrics.width,
+          areaHeight: metrics.height
+        };
+      }
+
+      function showCross(pxX, pxY) {
+        crossV.style.left = pxX + "px";
+        crossH.style.top = pxY + "px";
+        crossV.classList.add("show");
+        crossH.classList.add("show");
+      }
+
+      function hideCross() {
+        crossV.classList.remove("show");
+        crossH.classList.remove("show");
+      }
+
+      function updatePointsCount() {
+        var total = points.length;
+        pointsCount.textContent = total + (total === 1 ? " point" : " points");
+      }
+
+      function addPoint(normX, normY) {
+        var point = {
+          normX: normX,
+          normY: normY,
+          markerEl: document.createElement("div"),
+          labelEl: document.createElement("div"),
+          listEl: document.createElement("li")
+        };
+        point.markerEl.className = "point-marker";
+        point.labelEl.className = "point-index";
+        pointsLayer.appendChild(point.markerEl);
+        pointsLayer.appendChild(point.labelEl);
+        pointsList.appendChild(point.listEl);
+        points.push(point);
+      }
+
+      function clearPoints() {
+        points = [];
+        linesLayer.innerHTML = "";
+        pointsLayer.innerHTML = "";
+        pointsList.innerHTML = "";
+        lockedValue.textContent = "x: -, y: -";
+        if (!hoverVisible) {
+          hideCross();
+        }
+        updatePointsCount();
+      }
+
+      function updateLiveFromNorm() {
+        if (!lastHoverNorm) {
+          return;
+        }
+        var meters = toMeters(lastHoverNorm.normX, lastHoverNorm.normY);
+        liveValue.textContent = formatPoint(meters);
+      }
+
+      function updateHoverFromRaw() {
+        if (!lastHoverRawNorm) {
+          return;
+        }
+        var snapped = applySnap(lastHoverRawNorm.normX, lastHoverRawNorm.normY);
+        lastHoverNorm = { normX: snapped.normX, normY: snapped.normY };
+        updateCrossFromNorm();
+        updateLiveFromNorm();
+      }
+
+      function updatePointsFromNorm() {
+        updatePointsCount();
+        if (!points.length) {
+          linesLayer.innerHTML = "";
+          lockedValue.textContent = "x: -, y: -";
+          if (!hoverVisible) {
+            hideCross();
+          }
+          return;
+        }
+        var metrics = getBoardMetrics();
+        if (!metrics) {
+          return;
+        }
+
+        updateWallOverlay(metrics);
+        linesLayer.setAttribute("viewBox", "0 0 " + metrics.width + " " + metrics.height);
+        linesLayer.innerHTML = "";
+
+        var lastPoint = points[points.length - 1];
+        points.forEach(function (point, idx) {
+          var pxX = point.normX * metrics.width;
+          var pxY = point.normY * metrics.height;
+          point.markerEl.style.left = pxX + "px";
+          point.markerEl.style.top = pxY + "px";
+          point.labelEl.style.left = pxX + "px";
+          point.labelEl.style.top = pxY + "px";
+          point.labelEl.textContent = String(idx + 1);
+          point.markerEl.classList.toggle("latest", idx === points.length - 1);
+          point.listEl.textContent = formatPoint(toMeters(point.normX, point.normY));
+
+          if (idx > 0) {
+            var prev = points[idx - 1];
+            var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("class", "point-link");
+            line.setAttribute("x1", (prev.normX * metrics.width).toFixed(2));
+            line.setAttribute("y1", (prev.normY * metrics.height).toFixed(2));
+            line.setAttribute("x2", pxX.toFixed(2));
+            line.setAttribute("y2", pxY.toFixed(2));
+            linesLayer.appendChild(line);
+          }
+        });
+
+        lockedValue.textContent = formatPoint(toMeters(lastPoint.normX, lastPoint.normY));
+        if (!hoverVisible) {
+          hideCross();
+        }
+      }
+
+      function handlePointerMove(ev) {
+        var point = getPointFromEvent(ev);
+        if (!point) {
+          return;
+        }
+        hoverVisible = true;
+        lastHoverRawNorm = { normX: point.normX, normY: point.normY };
+        var snapped = applySnap(point.normX, point.normY);
+        lastHoverNorm = { normX: snapped.normX, normY: snapped.normY };
+        showCross(snapped.normX * point.areaWidth, snapped.normY * point.areaHeight);
+        updateLiveFromNorm();
+      }
+
+      function handlePointerLeave() {
+        hoverVisible = false;
+        updatePointsFromNorm();
+      }
+
+      function handlePointerDown(ev) {
+        var point = getPointFromEvent(ev);
+        if (!point) {
+          return;
+        }
+        hoverVisible = true;
+        lastHoverRawNorm = { normX: point.normX, normY: point.normY };
+        var snapped = applySnap(point.normX, point.normY);
+        lastHoverNorm = { normX: snapped.normX, normY: snapped.normY };
+        showCross(snapped.normX * point.areaWidth, snapped.normY * point.areaHeight);
+        updateLiveFromNorm();
+        addPoint(snapped.normX, snapped.normY);
+        updatePointsFromNorm();
+      }
+
+      board.addEventListener("pointermove", handlePointerMove);
+      board.addEventListener("pointerleave", handlePointerLeave);
+      board.addEventListener("pointerdown", handlePointerDown);
+      sizeMode.addEventListener("click", function (ev) {
+        var target = ev.target;
+        if (!target.classList.contains("size-btn")) {
+          return;
+        }
+        setSizeMode(target.getAttribute("data-size"));
+      });
+
+      clearPointsBtn.addEventListener("click", function () {
+        clearPoints();
+      });
+
+      [wallTopSelect, wallRightSelect, wallBottomSelect, wallLeftSelect].forEach(function (el) {
+        el.addEventListener("change", function () {
+          updateWallOverlay();
+        });
+      });
+
+      randomWallsBtn.addEventListener("click", function () {
+        randomizeOpenWalls();
+        updateWallOverlay();
+      });
+
+      unitSelect.addEventListener("change", function () {
+        if (lastHoverNorm) {
+          updateLiveFromNorm();
+        }
+        updatePointsFromNorm();
+      });
+
+      snapSelect.addEventListener("change", function () {
+        updateHoverFromRaw();
+      });
+
+      window.addEventListener("resize", function () {
+        updateWallOverlay();
+        updateCrossFromNorm();
+        updatePointsFromNorm();
+      });
+
+      fieldImage.addEventListener("load", function () {
+        updateWallOverlay();
+        updatePointsFromNorm();
+      });
+
+      setSizeMode("s");
+      randomizeOpenWalls();
+      updateWallOverlay();
+      ensureInitialWallOverlay(40);
+      updatePointsCount();
+    })();
+  </script>
+</body>
+</html>
