@@ -18,6 +18,7 @@ venv/
 # Local temp / generated during analysis
 temp_check.js
 rules-page-*.png
+WRO-2026_FutureEngineers_Playfield.zip
 
 # Logs
 *.log
