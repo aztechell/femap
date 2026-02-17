@@ -199,6 +199,31 @@
       z-index: 3;
     }
 
+    .start-zone-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .start-zone-rect {
+      position: absolute;
+      border: none;
+      background: rgba(255, 235, 59, 0.16);
+      border-radius: 6px;
+    }
+
+    .start-dir-arrow {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 18px;
+      height: 10px;
+      background: rgba(210, 25, 25, 0.95);
+      clip-path: polygon(0 25%, 72% 25%, 72% 0, 100% 50%, 72% 100%, 72% 75%, 0 75%);
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+
     .point-marker {
       position: absolute;
       width: 12px;
@@ -343,6 +368,13 @@
       line-height: 1.3;
     }
 
+    .zone-value {
+      font-size: 0.84rem;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
     @media (max-width: 920px) {
       .workspace {
         grid-template-columns: 1fr;
@@ -370,6 +402,7 @@
           <div class="cross h" id="crossH"></div>
           <svg class="lines-layer" id="linesLayer" aria-hidden="true"></svg>
           <div class="points-layer" id="pointsLayer"></div>
+          <div class="start-zone-layer" id="startZoneLayer"></div>
         </section>
 
         <div class="size-mode" id="sizeMode">
@@ -434,8 +467,14 @@
           </div>
           <div class="wall-row">
             <button type="button" class="mini-btn" id="randomWallsBtn">Random Toss</button>
+            <button type="button" class="mini-btn" id="randomStartZoneBtn">Random Start Zone</button>
+            <button type="button" class="mini-btn" id="randomDirectionBtn">Random Direction</button>
           </div>
-          <p class="wall-note">Per rules: each section is wide (1000 mm) or narrow (600 mm).</p>
+          <div class="wall-row">
+            <span class="zone-value" id="startZoneValue">Bottom start zone: -</span>
+            <span class="zone-value" id="directionValue">Direction: -</span>
+          </div>
+          <p class="wall-note">Per rules: each section is wide (1000 mm) or narrow (600 mm). Starting section fixed to Bottom.</p>
         </div>
 
         <div class="stat">
@@ -468,6 +507,8 @@
       var INNER_WALL_THICKNESS_M = 0.02;
       var OPEN_WALL_WIDE_M = 1.0;
       var OPEN_WALL_NARROW_M = 0.6;
+      var TRACK_MIN_M = 0.0;
+      var TRACK_MAX_M = 3.0;
       var UNIT_CONFIG = {
         m: { factor: 1, decimals: 3, label: "m" },
         cm: { factor: 100, decimals: 1, label: "cm" },
@@ -485,6 +526,7 @@
       var crossH = document.getElementById("crossH");
       var linesLayer = document.getElementById("linesLayer");
       var pointsLayer = document.getElementById("pointsLayer");
+      var startZoneLayer = document.getElementById("startZoneLayer");
       var leftCol = document.querySelector(".left-col");
       var sizeMode = document.getElementById("sizeMode");
       var pointsCount = document.getElementById("pointsCount");
@@ -495,6 +537,10 @@
       var wallBottomSelect = document.getElementById("wallBottomSelect");
       var wallLeftSelect = document.getElementById("wallLeftSelect");
       var randomWallsBtn = document.getElementById("randomWallsBtn");
+      var randomStartZoneBtn = document.getElementById("randomStartZoneBtn");
+      var randomDirectionBtn = document.getElementById("randomDirectionBtn");
+      var startZoneValue = document.getElementById("startZoneValue");
+      var directionValue = document.getElementById("directionValue");
 
       var SIZE_CONFIG = {
         s: "clamp(300px, 44vw, 560px)",
@@ -502,10 +548,32 @@
         l: "clamp(520px, 72vw, 980px)"
       };
 
+      var BOTTOM_START_ZONES = [
+        { zone: 1, xMin: 1.5, yMin: 0.6, xMax: 2.0, yMax: 1.0 },
+        { zone: 2, xMin: 1.5, yMin: 0.4, xMax: 2.0, yMax: 0.6 },
+        { zone: 3, xMin: 1.5, yMin: 0.0, xMax: 2.0, yMax: 0.4 },
+        { zone: 4, xMin: 1.0, yMin: 0.6, xMax: 1.5, yMax: 1.0 },
+        { zone: 5, xMin: 1.0, yMin: 0.4, xMax: 1.5, yMax: 0.6 },
+        { zone: 6, xMin: 1.0, yMin: 0.0, xMax: 1.5, yMax: 0.4 }
+      ];
+
       var lastHoverNorm = null;
       var lastHoverRawNorm = null;
       var hoverVisible = false;
       var points = [];
+      var startZone = null;
+      var driveDirection = null;
+      var startZoneRectEl = document.createElement("div");
+      var startDirArrowEl = document.createElement("div");
+      startZoneRectEl.className = "start-zone-rect";
+      startDirArrowEl.className = "start-dir-arrow";
+      startZoneRectEl.appendChild(startDirArrowEl);
+      startZoneLayer.appendChild(startZoneRectEl);
+      setStartZoneVisible(false);
+
+      function setStartZoneVisible(visible) {
+        startZoneRectEl.style.display = visible ? "flex" : "none";
+      }
 
       function clamp(v, min, max) {
         return Math.min(Math.max(v, min), max);
@@ -515,6 +583,15 @@
         var x = COORD_MIN_M + normX * COORD_SPAN_M;
         var y = COORD_MIN_M + (1 - normY) * COORD_SPAN_M;
         return { x: x, y: y };
+      }
+
+      function fromMeters(x, y) {
+        var normX = (x - COORD_MIN_M) / COORD_SPAN_M;
+        var normY = 1 - (y - COORD_MIN_M) / COORD_SPAN_M;
+        return {
+          normX: clamp(normX, 0, 1),
+          normY: clamp(normY, 0, 1)
+        };
       }
 
       function getActiveUnit() {
@@ -595,16 +672,107 @@
         wallLeftSelect.value = values[Math.floor(Math.random() * 2)];
       }
 
+      function isZoneValidForBottomSection(zone) {
+        if (!zone) {
+          return false;
+        }
+        var bottomDistance = getWallDistances().bottom;
+        return zone.yMax <= bottomDistance + 1e-9;
+      }
+
+      function getZoneByDie(dieFace) {
+        return BOTTOM_START_ZONES[dieFace - 1] || null;
+      }
+
+      function randomizeDirection() {
+        driveDirection = Math.random() < 0.5 ? "CW" : "CCW";
+        updateDirectionUi();
+      }
+
+      function updateDirectionUi() {
+        directionValue.textContent = "Direction: " + (driveDirection || "-");
+        if (!driveDirection) {
+          startDirArrowEl.style.display = "none";
+          return;
+        }
+        startDirArrowEl.style.display = "block";
+        startDirArrowEl.style.transform = "translate(-50%, -50%) rotate(" + (driveDirection === "CW" ? 180 : 0) + "deg)";
+      }
+
+      function updateStartZoneOverlay() {
+        if (!startZone) {
+          setStartZoneVisible(false);
+          startZoneValue.textContent = "Bottom start zone: -";
+          return;
+        }
+        startZoneValue.textContent = "Bottom start zone: " + startZone.zone + " (die " + startZone.die + ")";
+
+        var metrics = getBoardMetrics();
+        if (!metrics) {
+          setStartZoneVisible(false);
+          return;
+        }
+
+        var normA = fromMeters(startZone.xMin, startZone.yMin);
+        var normB = fromMeters(startZone.xMax, startZone.yMax);
+        var leftPx = Math.min(normA.normX, normB.normX) * metrics.width;
+        var rightPx = Math.max(normA.normX, normB.normX) * metrics.width;
+        var topPx = Math.min(normA.normY, normB.normY) * metrics.height;
+        var bottomPx = Math.max(normA.normY, normB.normY) * metrics.height;
+        startZoneRectEl.style.left = leftPx + "px";
+        startZoneRectEl.style.top = topPx + "px";
+        startZoneRectEl.style.width = Math.max(0, rightPx - leftPx) + "px";
+        startZoneRectEl.style.height = Math.max(0, bottomPx - topPx) + "px";
+        updateDirectionUi();
+        setStartZoneVisible(true);
+      }
+
+      function randomizeStartZone() {
+        var maxAttempts = 32;
+        var attempt;
+        for (attempt = 0; attempt < maxAttempts; attempt += 1) {
+          var die = 1 + Math.floor(Math.random() * 6);
+          var zone = getZoneByDie(die);
+          if (!isZoneValidForBottomSection(zone)) {
+            continue;
+          }
+          startZone = {
+            die: die,
+            zone: zone.zone,
+            xMin: zone.xMin,
+            yMin: zone.yMin,
+            xMax: zone.xMax,
+            yMax: zone.yMax
+          };
+          updateStartZoneOverlay();
+          return;
+        }
+        startZone = null;
+        updateStartZoneOverlay();
+      }
+
+      function ensureStartZoneValid() {
+        if (!startZone || !isZoneValidForBottomSection(startZone)) {
+          randomizeStartZone();
+          return;
+        }
+        updateStartZoneOverlay();
+      }
+
       function updateWallOverlay(metrics) {
         var m = metrics || getBoardMetrics();
         if (!m) {
           return;
         }
         var d = getWallDistances();
-        var x1 = (d.left / FIELD_SIZE_M) * m.width;
-        var x2 = m.width - (d.right / FIELD_SIZE_M) * m.width;
-        var y1 = (d.top / FIELD_SIZE_M) * m.height;
-        var y2 = m.height - (d.bottom / FIELD_SIZE_M) * m.height;
+        var leftM = TRACK_MIN_M + d.left;
+        var rightM = TRACK_MAX_M - d.right;
+        var topM = TRACK_MAX_M - d.top;
+        var bottomM = TRACK_MIN_M + d.bottom;
+        var x1 = fromMeters(leftM, TRACK_MIN_M).normX * m.width;
+        var x2 = fromMeters(rightM, TRACK_MIN_M).normX * m.width;
+        var y1 = fromMeters(TRACK_MIN_M, topM).normY * m.height;
+        var y2 = fromMeters(TRACK_MIN_M, bottomM).normY * m.height;
 
         wallOverlay.setAttribute("viewBox", "0 0 " + m.width + " " + m.height);
         wallOverlay.innerHTML = "";
@@ -664,6 +832,7 @@
         updateWallOverlay();
         updateCrossFromNorm();
         updatePointsFromNorm();
+        updateStartZoneOverlay();
       }
 
       function getPointFromEvent(ev) {
@@ -762,6 +931,7 @@
         }
 
         updateWallOverlay(metrics);
+        updateStartZoneOverlay();
         linesLayer.setAttribute("viewBox", "0 0 " + metrics.width + " " + metrics.height);
         linesLayer.innerHTML = "";
 
@@ -846,12 +1016,23 @@
       [wallTopSelect, wallRightSelect, wallBottomSelect, wallLeftSelect].forEach(function (el) {
         el.addEventListener("change", function () {
           updateWallOverlay();
+          ensureStartZoneValid();
         });
       });
 
       randomWallsBtn.addEventListener("click", function () {
         randomizeOpenWalls();
         updateWallOverlay();
+        randomizeStartZone();
+        randomizeDirection();
+      });
+
+      randomStartZoneBtn.addEventListener("click", function () {
+        randomizeStartZone();
+      });
+
+      randomDirectionBtn.addEventListener("click", function () {
+        randomizeDirection();
       });
 
       unitSelect.addEventListener("change", function () {
@@ -869,15 +1050,19 @@
         updateWallOverlay();
         updateCrossFromNorm();
         updatePointsFromNorm();
+        updateStartZoneOverlay();
       });
 
       fieldImage.addEventListener("load", function () {
         updateWallOverlay();
         updatePointsFromNorm();
+        updateStartZoneOverlay();
       });
 
       setSizeMode("s");
       randomizeOpenWalls();
+      randomizeStartZone();
+      randomizeDirection();
       updateWallOverlay();
       ensureInitialWallOverlay(40);
       updatePointsCount();
