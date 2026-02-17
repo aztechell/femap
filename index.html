@@ -6,15 +6,18 @@
   <title>Field Coordinate Meter</title>
   <style>
     :root {
-      --bg-1: #f2f7ff;
-      --bg-2: #dfeeff;
+      --bg-1: #e9f1ff;
+      --bg-2: #cddff9;
       --card: #ffffff;
-      --text: #162131;
-      --muted: #4f6178;
+      --text: #0f1e33;
+      --muted: #395575;
       --accent: #0077ff;
       --accent-2: #00a39b;
-      --line: rgba(22, 33, 49, 0.2);
-      --shadow: 0 12px 28px rgba(22, 33, 49, 0.14);
+      --surface: #f2f7ff;
+      --surface-border: #c2d4ec;
+      --control-border: #9eb9da;
+      --line: rgba(15, 30, 51, 0.28);
+      --shadow: 0 12px 28px rgba(15, 30, 51, 0.18);
     }
 
     * {
@@ -35,6 +38,7 @@
       max-width: 1500px;
       margin: 0 auto;
       background: var(--card);
+      border: 1px solid var(--surface-border);
       border-radius: 16px;
       box-shadow: var(--shadow);
       padding: 16px;
@@ -60,8 +64,8 @@
     }
 
     .stat {
-      background: #f7faff;
-      border: 1px solid #dde9f8;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
       border-radius: 10px;
       padding: 9px 11px;
       font-variant-numeric: tabular-nums;
@@ -74,15 +78,17 @@
       margin-bottom: 3px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-    }
-
-    .value {
       font-weight: 600;
     }
 
+    .value {
+      color: var(--text);
+      font-weight: 700;
+    }
+
     .control {
-      background: #f7faff;
-      border: 1px solid #dde9f8;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
       border-radius: 10px;
       padding: 9px 11px;
     }
@@ -93,12 +99,13 @@
     }
 
     select {
-      border: 1px solid #c5d9f4;
+      border: 1px solid var(--control-border);
       border-radius: 8px;
       padding: 6px 9px;
       background: #fff;
       color: var(--text);
       font-size: 0.9rem;
+      font-weight: 500;
     }
 
     .control select {
@@ -117,8 +124,8 @@
       max-width: 100%;
       border-radius: 12px;
       overflow: hidden;
-      border: 1px solid #cfdef3;
-      background: #ecf4ff;
+      border: 1px solid #b8cde8;
+      background: #e2ecfb;
       line-height: 0;
       touch-action: none;
       user-select: none;
@@ -146,6 +153,13 @@
       fill: none;
       vector-effect: non-scaling-stroke;
       stroke-linejoin: miter;
+    }
+
+    .obstacle-boundary-line {
+      stroke: #d100c9;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: butt;
     }
 
     .cross {
@@ -224,6 +238,23 @@
       transform: translate(-50%, -50%) rotate(0deg);
     }
 
+    .single-traffic-sign {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 2px;
+      border: none;
+      box-shadow: none;
+      display: none;
+    }
+
+    .single-traffic-sign.red {
+      background: #e53935;
+    }
+
+    .single-traffic-sign.green {
+      background: #1ea653;
+    }
+
     .point-marker {
       position: absolute;
       width: 12px;
@@ -271,7 +302,7 @@
 
     .size-btn {
       min-width: 40px;
-      border: 1px solid #c5d9f4;
+      border: 1px solid var(--control-border);
       border-radius: 8px;
       padding: 5px 10px;
       background: #fff;
@@ -282,9 +313,9 @@
     }
 
     .size-btn.active {
-      background: #e7f1ff;
-      border-color: #90bcff;
-      color: #0a4aa8;
+      background: #dbeafe;
+      border-color: #6ea2de;
+      color: #0b438f;
     }
 
     .points-header {
@@ -302,7 +333,7 @@
     }
 
     .clear-btn {
-      border: 1px solid #c5d9f4;
+      border: 1px solid var(--control-border);
       border-radius: 8px;
       background: #fff;
       color: var(--text);
@@ -332,6 +363,74 @@
       margin-bottom: 8px;
     }
 
+    .wall-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .wall-panel-head .label {
+      margin-bottom: 0;
+    }
+
+    .help-btn {
+      width: 24px;
+      height: 24px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--control-border);
+      border-radius: 999px;
+      background: #fff;
+      color: #15437c;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .help-btn:hover {
+      background: #edf4ff;
+      border-color: #83abd9;
+    }
+
+    .help-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .help-popup {
+      position: absolute;
+      right: calc(100% + 8px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      border: 1px solid var(--control-border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.2;
+      padding: 4px 8px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 120ms ease;
+      z-index: 8;
+    }
+
+    .help-wrap:hover .help-popup,
+    .help-wrap:focus-within .help-popup {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .wall-item {
       display: flex;
       align-items: center;
@@ -351,8 +450,30 @@
       align-items: center;
     }
 
+    #randomParkingRow,
+    #randomStartZoneRow {
+      margin-top: 6px;
+    }
+
+    .check-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .check-item input[type="checkbox"] {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+      accent-color: #0b438f;
+    }
+
     .mini-btn {
-      border: 1px solid #c5d9f4;
+      border: 1px solid var(--control-border);
       border-radius: 8px;
       background: #fff;
       color: var(--text);
@@ -361,10 +482,25 @@
       padding: 4px 10px;
     }
 
+    .size-btn:hover,
+    .clear-btn:hover,
+    .mini-btn:hover {
+      background: #edf4ff;
+      border-color: #83abd9;
+    }
+
+    select:disabled,
+    .mini-btn:disabled {
+      background: #e9f0fb;
+      border-color: #c4d3e8;
+      color: #6b7f9a;
+      cursor: not-allowed;
+    }
+
     .wall-note {
       margin: 6px 0 0;
       font-size: 0.78rem;
-      color: var(--muted);
+      color: #3f5878;
       line-height: 1.3;
     }
 
@@ -372,7 +508,7 @@
       font-size: 0.84rem;
       color: var(--text);
       font-variant-numeric: tabular-nums;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     @media (max-width: 920px) {
@@ -416,30 +552,24 @@
       </div>
 
       <aside class="right-col">
-        <div class="control-row">
-          <div class="control">
-            <label for="unitSelect" class="label">Units</label>
-            <select id="unitSelect">
-              <option value="mm" selected>Millimeters (mm)</option>
-              <option value="cm">Centimeters (cm)</option>
-              <option value="m">Meters (m)</option>
-            </select>
-          </div>
-
-          <div class="control">
-            <label for="snapSelect" class="label">Snap Grid (Invisible)</label>
-            <select id="snapSelect">
-              <option value="off">Off</option>
-              <option value="0.01">10 mm</option>
-              <option value="0.05">50 mm</option>
-              <option value="0.1" selected>100 mm</option>
-            </select>
-          </div>
+        <div class="control">
+          <label for="modeSelect" class="label">Mode</label>
+          <select id="modeSelect">
+            <option value="open" selected>Open Challenge</option>
+            <option value="obstacle">Obstacle Challenge</option>
+            <option value="obstacle_manual">Obstacle Challenge (manual)</option>
+          </select>
         </div>
 
         <div class="control">
-          <div class="label">Open Challenge Inner Walls</div>
-          <div class="wall-grid">
+          <div class="wall-panel-head">
+            <div class="label" id="wallConfigLabel">Open Challenge Settings</div>
+            <div class="help-wrap">
+              <button type="button" class="help-btn" id="obstacleRulesBtn" aria-label="Open obstacle challenge rules page 15" title="36 cards with pisitions">?</button>
+              <div class="help-popup">36 cards with pisitions</div>
+            </div>
+          </div>
+          <div class="wall-grid" id="wallGrid">
             <label class="wall-item">Top
               <select id="wallTopSelect">
                 <option value="1" selected>1000 mm</option>
@@ -469,12 +599,48 @@
             <button type="button" class="mini-btn" id="randomWallsBtn">Random Toss</button>
             <button type="button" class="mini-btn" id="randomStartZoneBtn">Random Start Zone</button>
             <button type="button" class="mini-btn" id="randomDirectionBtn">Random Direction</button>
+            <button type="button" class="mini-btn" id="randomObstaclesBtn" style="display: none;">Random Obstacles</button>
+            <button type="button" class="mini-btn" id="clearObstaclesBtn" style="display: none;">Clear Obstacles</button>
+          </div>
+          <div class="wall-row" id="randomParkingRow" style="display: none;">
+            <label class="check-item">
+              <input type="checkbox" id="randomParkingCheck" />
+              <span>Random Parking</span>
+            </label>
+          </div>
+          <div class="wall-row" id="randomStartZoneRow" style="display: none;">
+            <label class="check-item">
+              <input type="checkbox" id="randomStartZoneCheck" />
+              <span>Random Start Zone</span>
+            </label>
           </div>
           <div class="wall-row">
             <span class="zone-value" id="startZoneValue">Bottom start zone: -</span>
             <span class="zone-value" id="directionValue">Direction: -</span>
           </div>
-          <p class="wall-note">Per rules: each section is wide (1000 mm) or narrow (600 mm). Starting section fixed to Bottom.</p>
+          <p class="wall-note" id="wallNote">Per rules: each section is wide (1000 mm) or narrow (600 mm).</p>
+          <p class="wall-note" id="obstacleCardsInfo"></p>
+        </div>
+
+        <div class="control-row">
+          <div class="control">
+            <label for="unitSelect" class="label">Units</label>
+            <select id="unitSelect">
+              <option value="mm" selected>Millimeters (mm)</option>
+              <option value="cm">Centimeters (cm)</option>
+              <option value="m">Meters (m)</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label for="snapSelect" class="label">Snap Grid (Invisible)</label>
+            <select id="snapSelect">
+              <option value="off">Off</option>
+              <option value="0.01">10 mm</option>
+              <option value="0.05">50 mm</option>
+              <option value="0.1" selected>100 mm</option>
+            </select>
+          </div>
         </div>
 
         <div class="stat">
@@ -507,6 +673,69 @@
       var INNER_WALL_THICKNESS_M = 0.02;
       var OPEN_WALL_WIDE_M = 1.0;
       var OPEN_WALL_NARROW_M = 0.6;
+      var OPEN_START_DEFAULT_SIDE = "bottom";
+      var OPEN_START_SIDES = ["top", "right", "bottom", "left"];
+      var OBSTACLE_BOUNDARY_WIDTH_M = 0.02;
+      var OBSTACLE_BOUNDARY_LENGTH_M = 0.2;
+      var OBSTACLE_PARKING_DEFAULT_SIDE = "bottom";
+      var OBSTACLE_PARKING_SIDES = ["top", "right", "bottom", "left"];
+      var OBSTACLE_PARKING_SIDE_TURNS = {
+        bottom: 0,
+        right: 1,
+        top: 2,
+        left: 3
+      };
+      var OBSTACLE_PARKING_BASE_LINES = [
+        { x1: 1.6, y1: 0.0, x2: 1.6, y2: OBSTACLE_BOUNDARY_LENGTH_M },
+        { x1: 2.0, y1: 0.0, x2: 2.0, y2: OBSTACLE_BOUNDARY_LENGTH_M }
+      ];
+      var OBSTACLE_PARKING_BASE_ARROW = { x: 1.8, y: 0.1 };
+      var PARKING_SAFE_INTERSECTION_MAP = {
+        T3: "T1",
+        T4: "T2",
+        X2: "X1"
+      };
+      var SINGLE_SIGN_SIZE_M = 0.05;
+      var SINGLE_SIGN_POSITIONS = [
+        { name: "top", intersection: "X2", x: 1.5, y: 2.6 },
+        { name: "right", intersection: "X2", x: 2.6, y: 1.5 },
+        { name: "bottom", intersection: "X1", x: 1.5, y: 0.6 },
+        { name: "left", intersection: "X2", x: 0.4, y: 1.5 }
+      ];
+      var OBSTACLE_INTERSECTION_COORDS_M = {
+        top: {
+          T4: { x: 1.0, y: 2.6 },
+          X2: { x: 1.5, y: 2.6 },
+          T3: { x: 2.0, y: 2.6 },
+          T2: { x: 1.0, y: 2.4 },
+          X1: { x: 1.5, y: 2.4 },
+          T1: { x: 2.0, y: 2.4 }
+        },
+        right: {
+          T4: { x: 2.6, y: 2.0 },
+          X2: { x: 2.6, y: 1.5 },
+          T3: { x: 2.6, y: 1.0 },
+          T2: { x: 2.4, y: 2.0 },
+          X1: { x: 2.4, y: 1.5 },
+          T1: { x: 2.4, y: 1.0 }
+        },
+        bottom: {
+          T4: { x: 2.0, y: 0.4 },
+          X2: { x: 1.5, y: 0.4 },
+          T3: { x: 1.0, y: 0.4 },
+          T2: { x: 2.0, y: 0.6 },
+          X1: { x: 1.5, y: 0.6 },
+          T1: { x: 1.0, y: 0.6 }
+        },
+        left: {
+          T4: { x: 0.4, y: 1.0 },
+          X2: { x: 0.4, y: 1.5 },
+          T3: { x: 0.4, y: 2.0 },
+          T2: { x: 0.6, y: 1.0 },
+          X1: { x: 0.6, y: 1.5 },
+          T1: { x: 0.6, y: 2.0 }
+        }
+      };
       var TRACK_MIN_M = 0.0;
       var TRACK_MAX_M = 3.0;
       var UNIT_CONFIG = {
@@ -519,6 +748,7 @@
       var fieldImage = document.getElementById("fieldImage");
       var liveValue = document.getElementById("liveValue");
       var lockedValue = document.getElementById("lockedValue");
+      var modeSelect = document.getElementById("modeSelect");
       var unitSelect = document.getElementById("unitSelect");
       var snapSelect = document.getElementById("snapSelect");
       var wallOverlay = document.getElementById("wallOverlay");
@@ -536,9 +766,20 @@
       var wallRightSelect = document.getElementById("wallRightSelect");
       var wallBottomSelect = document.getElementById("wallBottomSelect");
       var wallLeftSelect = document.getElementById("wallLeftSelect");
+      var wallGrid = document.getElementById("wallGrid");
       var randomWallsBtn = document.getElementById("randomWallsBtn");
       var randomStartZoneBtn = document.getElementById("randomStartZoneBtn");
       var randomDirectionBtn = document.getElementById("randomDirectionBtn");
+      var randomParkingRow = document.getElementById("randomParkingRow");
+      var randomParkingCheck = document.getElementById("randomParkingCheck");
+      var randomObstaclesBtn = document.getElementById("randomObstaclesBtn");
+      var clearObstaclesBtn = document.getElementById("clearObstaclesBtn");
+      var randomStartZoneRow = document.getElementById("randomStartZoneRow");
+      var randomStartZoneCheck = document.getElementById("randomStartZoneCheck");
+      var wallConfigLabel = document.getElementById("wallConfigLabel");
+      var wallNote = document.getElementById("wallNote");
+      var obstacleCardsInfo = document.getElementById("obstacleCardsInfo");
+      var obstacleRulesBtn = document.getElementById("obstacleRulesBtn");
       var startZoneValue = document.getElementById("startZoneValue");
       var directionValue = document.getElementById("directionValue");
 
@@ -557,19 +798,153 @@
         { zone: 6, xMin: 1.0, yMin: 0.0, xMax: 1.5, yMax: 0.4 }
       ];
 
+      // Full 36-card dataset (official card ids are 1..36, with repeated layouts).
+      // Each placement is inside one straightforward section using intersection labels:
+      // T1, X1, T2, T3, X2, T4
+      var CARDS36 = [
+        { id: 1, placements: [{ intersection: "T1", color: "green" }] },
+        { id: 2, placements: [{ intersection: "T1", color: "red" }] },
+        { id: 3, placements: [{ intersection: "X1", color: "green" }] },
+        { id: 4, placements: [{ intersection: "X1", color: "red" }] },
+        { id: 5, placements: [{ intersection: "T2", color: "green" }] },
+        { id: 6, placements: [{ intersection: "T2", color: "red" }] },
+        { id: 7, placements: [{ intersection: "T3", color: "green" }] },
+        { id: 8, placements: [{ intersection: "T3", color: "red" }] },
+        { id: 9, placements: [{ intersection: "X2", color: "green" }] },
+        { id: 10, placements: [{ intersection: "X2", color: "red" }] },
+        { id: 11, placements: [{ intersection: "T4", color: "green" }] },
+        { id: 12, placements: [{ intersection: "T4", color: "red" }] },
+        { id: 13, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 14, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 15, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 16, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 17, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 18, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 19, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 20, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T4", color: "red" }
+        ] },
+        { id: 21, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 22, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T4", color: "red" }
+        ] },
+        { id: 23, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 24, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T4", color: "red" }
+        ] },
+        { id: 25, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 26, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 27, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 28, placements: [
+          { intersection: "T1", color: "green" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 29, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T2", color: "green" }
+        ] },
+        { id: 30, placements: [
+          { intersection: "T1", color: "red" },
+          { intersection: "T2", color: "red" }
+        ] },
+        { id: 31, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 32, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T4", color: "red" }
+        ] },
+        { id: 33, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 34, placements: [
+          { intersection: "T3", color: "green" },
+          { intersection: "T4", color: "red" }
+        ] },
+        { id: 35, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T4", color: "green" }
+        ] },
+        { id: 36, placements: [
+          { intersection: "T3", color: "red" },
+          { intersection: "T4", color: "red" }
+        ] }
+      ];
+
       var lastHoverNorm = null;
       var lastHoverRawNorm = null;
       var hoverVisible = false;
       var points = [];
       var startZone = null;
       var driveDirection = null;
+      var singleTrafficSign = null;
+      var obstacleCardScheme = null;
+      var manualObstacleSigns = [];
+      var obstacleParkingSide = OBSTACLE_PARKING_DEFAULT_SIDE;
+      var challengeMode = "";
+      var savedOpenWallValues = {
+        top: String(OPEN_WALL_WIDE_M),
+        right: String(OPEN_WALL_WIDE_M),
+        bottom: String(OPEN_WALL_WIDE_M),
+        left: String(OPEN_WALL_WIDE_M)
+      };
       var startZoneRectEl = document.createElement("div");
       var startDirArrowEl = document.createElement("div");
+      var obstacleDirArrowEl = document.createElement("div");
+      var singleTrafficSignEl = document.createElement("div");
+      var obstacleCardSignEls = [];
       startZoneRectEl.className = "start-zone-rect";
       startDirArrowEl.className = "start-dir-arrow";
+      obstacleDirArrowEl.className = "start-dir-arrow";
+      singleTrafficSignEl.className = "single-traffic-sign";
       startZoneRectEl.appendChild(startDirArrowEl);
       startZoneLayer.appendChild(startZoneRectEl);
+      startZoneLayer.appendChild(obstacleDirArrowEl);
+      startZoneLayer.appendChild(singleTrafficSignEl);
       setStartZoneVisible(false);
+      obstacleDirArrowEl.style.display = "none";
+      obstacleCardsInfo.style.display = "none";
 
       function setStartZoneVisible(visible) {
         startZoneRectEl.style.display = visible ? "flex" : "none";
@@ -664,6 +1039,157 @@
         };
       }
 
+      function getWallValues() {
+        return {
+          top: wallTopSelect.value,
+          right: wallRightSelect.value,
+          bottom: wallBottomSelect.value,
+          left: wallLeftSelect.value
+        };
+      }
+
+      function setWallValues(values) {
+        wallTopSelect.value = values.top;
+        wallRightSelect.value = values.right;
+        wallBottomSelect.value = values.bottom;
+        wallLeftSelect.value = values.left;
+      }
+
+      function setWallControlsDisabled(disabled) {
+        [wallTopSelect, wallRightSelect, wallBottomSelect, wallLeftSelect].forEach(function (el) {
+          el.disabled = disabled;
+        });
+      }
+
+      function rotateParkingPointBySide(point, side) {
+        var turns = OBSTACLE_PARKING_SIDE_TURNS[side];
+        var t = Number.isFinite(turns) ? ((turns % 4) + 4) % 4 : 0;
+        if (t === 0) {
+          return { x: point.x, y: point.y };
+        }
+        if (t === 1) {
+          return { x: TRACK_MAX_M - point.y, y: point.x };
+        }
+        if (t === 2) {
+          return { x: TRACK_MAX_M - point.x, y: TRACK_MAX_M - point.y };
+        }
+        return { x: point.y, y: TRACK_MAX_M - point.x };
+      }
+
+      function getObstacleParkingLayout(side) {
+        var safeSide = OBSTACLE_PARKING_SIDE_TURNS[side] != null ? side : OBSTACLE_PARKING_DEFAULT_SIDE;
+        return {
+          side: safeSide,
+          arrow: rotateParkingPointBySide(OBSTACLE_PARKING_BASE_ARROW, safeSide),
+          lines: OBSTACLE_PARKING_BASE_LINES.map(function (line) {
+            var p1 = rotateParkingPointBySide({ x: line.x1, y: line.y1 }, safeSide);
+            var p2 = rotateParkingPointBySide({ x: line.x2, y: line.y2 }, safeSide);
+            return { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y };
+          })
+        };
+      }
+
+      function getObstacleDirectionAngle(side, direction) {
+        var angleBySide = {
+          bottom: { CW: 180, CCW: 0 },
+          right: { CW: 90, CCW: 270 },
+          top: { CW: 0, CCW: 180 },
+          left: { CW: 270, CCW: 90 }
+        };
+        var bySide = angleBySide[side] || angleBySide.bottom;
+        return bySide[direction] != null ? bySide[direction] : 0;
+      }
+
+      function randomizeObstacleParkingSide() {
+        if (!randomParkingCheck.checked) {
+          obstacleParkingSide = OBSTACLE_PARKING_DEFAULT_SIDE;
+          return;
+        }
+        obstacleParkingSide = OBSTACLE_PARKING_SIDES[Math.floor(Math.random() * OBSTACLE_PARKING_SIDES.length)];
+      }
+
+      function getRandomOpenStartSide() {
+        if (!randomStartZoneCheck.checked) {
+          return OPEN_START_DEFAULT_SIDE;
+        }
+        return OPEN_START_SIDES[Math.floor(Math.random() * OPEN_START_SIDES.length)];
+      }
+
+      function rotateStartZoneFromBottom(zone, side) {
+        var p1 = rotateParkingPointBySide({ x: zone.xMin, y: zone.yMin }, side);
+        var p2 = rotateParkingPointBySide({ x: zone.xMax, y: zone.yMax }, side);
+        return {
+          xMin: Math.min(p1.x, p2.x),
+          yMin: Math.min(p1.y, p2.y),
+          xMax: Math.max(p1.x, p2.x),
+          yMax: Math.max(p1.y, p2.y)
+        };
+      }
+
+      function isStartZoneValidForSide(zone, side) {
+        if (!zone) {
+          return false;
+        }
+        var d = getWallDistances();
+        var s = side || OPEN_START_DEFAULT_SIDE;
+        var eps = 1e-9;
+        if (s === "bottom") {
+          return zone.yMax <= d.bottom + eps;
+        }
+        if (s === "top") {
+          return zone.yMin >= TRACK_MAX_M - d.top - eps;
+        }
+        if (s === "left") {
+          return zone.xMax <= d.left + eps;
+        }
+        if (s === "right") {
+          return zone.xMin >= TRACK_MAX_M - d.right - eps;
+        }
+        return false;
+      }
+
+      function updateObstacleDirectionArrow(metricsArg) {
+        var m = metricsArg || getBoardMetrics();
+        var isObstacleMode = challengeMode === "obstacle" || challengeMode === "obstacle_manual";
+        if (!isObstacleMode || !driveDirection || !m) {
+          obstacleDirArrowEl.style.display = "none";
+          return;
+        }
+        var parkingLayout = getObstacleParkingLayout(obstacleParkingSide);
+        var norm = fromMeters(parkingLayout.arrow.x, parkingLayout.arrow.y);
+        obstacleDirArrowEl.style.left = (norm.normX * m.width).toFixed(2) + "px";
+        obstacleDirArrowEl.style.top = (norm.normY * m.height).toFixed(2) + "px";
+        obstacleDirArrowEl.style.display = "block";
+        obstacleDirArrowEl.style.transform = "translate(-50%, -50%) rotate(" + getObstacleDirectionAngle(parkingLayout.side, driveDirection) + "deg)";
+      }
+
+      function updateSingleTrafficSignOverlay(metricsArg) {
+        var m = metricsArg || getBoardMetrics();
+        if (challengeMode !== "obstacle" || !singleTrafficSign || !m) {
+          singleTrafficSignEl.style.display = "none";
+          return;
+        }
+        var signX = singleTrafficSign.x;
+        var signY = singleTrafficSign.y;
+        if (singleTrafficSign.side === obstacleParkingSide && singleTrafficSign.intersection) {
+          var safeIntersection = getParkingSafeIntersection(singleTrafficSign.side, singleTrafficSign.intersection);
+          var safePoint = getObstacleIntersectionPoint(singleTrafficSign.side, safeIntersection);
+          if (safePoint) {
+            signX = safePoint.x;
+            signY = safePoint.y;
+          }
+        }
+        var norm = fromMeters(signX, signY);
+        var sizePx = Math.max(4, (SINGLE_SIGN_SIZE_M / FIELD_SIZE_M) * Math.min(m.width, m.height));
+        singleTrafficSignEl.style.left = (norm.normX * m.width).toFixed(2) + "px";
+        singleTrafficSignEl.style.top = (norm.normY * m.height).toFixed(2) + "px";
+        singleTrafficSignEl.style.width = sizePx.toFixed(2) + "px";
+        singleTrafficSignEl.style.height = sizePx.toFixed(2) + "px";
+        singleTrafficSignEl.classList.toggle("red", singleTrafficSign.color === "red");
+        singleTrafficSignEl.classList.toggle("green", singleTrafficSign.color === "green");
+        singleTrafficSignEl.style.display = "block";
+      }
+
       function randomizeOpenWalls() {
         var values = [String(OPEN_WALL_WIDE_M), String(OPEN_WALL_NARROW_M)];
         wallTopSelect.value = values[Math.floor(Math.random() * 2)];
@@ -672,12 +1198,282 @@
         wallLeftSelect.value = values[Math.floor(Math.random() * 2)];
       }
 
-      function isZoneValidForBottomSection(zone) {
-        if (!zone) {
-          return false;
+      function capitalizeWord(text) {
+        if (!text) {
+          return "";
         }
-        var bottomDistance = getWallDistances().bottom;
-        return zone.yMax <= bottomDistance + 1e-9;
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      }
+
+      function getClockwiseSidesFrom(startSide) {
+        var order = ["top", "right", "bottom", "left"];
+        var idx = order.indexOf(startSide);
+        if (idx < 0) {
+          idx = 0;
+        }
+        return [
+          order[idx],
+          order[(idx + 1) % 4],
+          order[(idx + 2) % 4],
+          order[(idx + 3) % 4]
+        ];
+      }
+
+      function drawCardIdsWithoutReplacement(excludedCardIds, amount) {
+        var deck = CARDS36
+          .map(function (card) { return card.id; })
+          .filter(function (id) { return excludedCardIds.indexOf(id) < 0; });
+        var chosen = [];
+        var count = Math.min(amount, deck.length);
+        while (chosen.length < count) {
+          var idx = Math.floor(Math.random() * deck.length);
+          chosen.push(deck[idx]);
+          deck.splice(idx, 1);
+        }
+        return chosen;
+      }
+
+      function ensureObstacleCardSignEls(count) {
+        while (obstacleCardSignEls.length < count) {
+          var el = document.createElement("div");
+          el.className = "single-traffic-sign";
+          el.style.display = "none";
+          startZoneLayer.appendChild(el);
+          obstacleCardSignEls.push(el);
+        }
+      }
+
+      function hideObstacleCardSigns() {
+        obstacleCardSignEls.forEach(function (el) {
+          el.style.display = "none";
+        });
+      }
+
+      function getObstacleIntersectionPoint(side, intersection) {
+        var sideMap = OBSTACLE_INTERSECTION_COORDS_M[side];
+        if (!sideMap) {
+          return null;
+        }
+        return sideMap[intersection] || null;
+      }
+
+      function getParkingSafeIntersection(side, intersection) {
+        if (side !== obstacleParkingSide) {
+          return intersection;
+        }
+        return PARKING_SAFE_INTERSECTION_MAP[intersection] || intersection;
+      }
+
+      function collectObstacleCardSigns() {
+        if (challengeMode === "obstacle_manual") {
+          return manualObstacleSigns.map(function (sign) {
+            return { x: sign.x, y: sign.y, color: sign.color };
+          });
+        }
+        if (!obstacleCardScheme) {
+          return [];
+        }
+        var signs = [];
+        obstacleCardScheme.assignments.forEach(function (assignment) {
+          assignment.placements.forEach(function (placement) {
+            var safeIntersection = getParkingSafeIntersection(assignment.side, placement.intersection);
+            var point = getObstacleIntersectionPoint(assignment.side, safeIntersection);
+            if (!point) {
+              return;
+            }
+            signs.push({
+              x: point.x,
+              y: point.y,
+              color: placement.color
+            });
+          });
+        });
+        return signs;
+      }
+
+      function updateObstacleCardSignsOverlay(metricsArg) {
+        var m = metricsArg || getBoardMetrics();
+        var isObstacleMode = challengeMode === "obstacle" || challengeMode === "obstacle_manual";
+        if (!isObstacleMode || !m) {
+          hideObstacleCardSigns();
+          return;
+        }
+        if (challengeMode === "obstacle" && !obstacleCardScheme) {
+          hideObstacleCardSigns();
+          return;
+        }
+
+        var signs = collectObstacleCardSigns();
+        var sizePx = Math.max(4, (SINGLE_SIGN_SIZE_M / FIELD_SIZE_M) * Math.min(m.width, m.height));
+        ensureObstacleCardSignEls(signs.length);
+        obstacleCardSignEls.forEach(function (el, idx) {
+          if (idx >= signs.length) {
+            el.style.display = "none";
+            return;
+          }
+          var sign = signs[idx];
+          var norm = fromMeters(sign.x, sign.y);
+          el.style.left = (norm.normX * m.width).toFixed(2) + "px";
+          el.style.top = (norm.normY * m.height).toFixed(2) + "px";
+          el.style.width = sizePx.toFixed(2) + "px";
+          el.style.height = sizePx.toFixed(2) + "px";
+          el.classList.toggle("red", sign.color === "red");
+          el.classList.toggle("green", sign.color === "green");
+          el.style.display = "block";
+        });
+      }
+
+      function updateObstacleCardsInfo() {
+        if (challengeMode !== "obstacle" || !obstacleCardScheme) {
+          obstacleCardsInfo.style.display = "none";
+          obstacleCardsInfo.innerHTML = "";
+          return;
+        }
+
+        var singleInfo = "Single section: " + capitalizeWord(obstacleCardScheme.singleSection) +
+          " -> Card " + obstacleCardScheme.singleCardId;
+        var cardsInfo = obstacleCardScheme.assignments.map(function (item) {
+          return capitalizeWord(item.side) + " -> Card " + item.cardId;
+        }).join(", ");
+        obstacleCardsInfo.innerHTML = singleInfo + "<br>Clockwise cards: " + cardsInfo + ".";
+        obstacleCardsInfo.style.display = "block";
+      }
+
+      function randomizeObstacleCards() {
+        randomizeObstacleParkingSide();
+        var point = SINGLE_SIGN_POSITIONS[Math.floor(Math.random() * SINGLE_SIGN_POSITIONS.length)];
+        var color = Math.random() < 0.5 ? "green" : "red";
+        singleTrafficSign = {
+          side: point.name,
+          intersection: point.intersection,
+          x: point.x,
+          y: point.y,
+          color: color
+        };
+
+        var singleCardId = color === "green" ? 9 : 10;
+        var clockwiseSides = getClockwiseSidesFrom(point.name);
+        var remainingSides = [clockwiseSides[1], clockwiseSides[2], clockwiseSides[3]];
+        var drawnCardIds = drawCardIdsWithoutReplacement([singleCardId], remainingSides.length);
+        var assignments = remainingSides.map(function (side, idx) {
+          var cardId = drawnCardIds[idx];
+          var card = CARDS36.find(function (entry) { return entry.id === cardId; });
+          return {
+            side: side,
+            cardId: cardId,
+            placements: card ? card.placements : []
+          };
+        });
+        obstacleCardScheme = {
+          singleSection: point.name,
+          singleColor: color,
+          singleCardId: singleCardId,
+          assignments: assignments
+        };
+
+        updateSingleTrafficSignOverlay();
+        updateObstacleCardSignsOverlay();
+        updateObstacleCardsInfo();
+      }
+
+      function findManualObstacleSignIndex(x, y) {
+        var half = SINGLE_SIGN_SIZE_M * 0.5;
+        var idx;
+        for (idx = manualObstacleSigns.length - 1; idx >= 0; idx -= 1) {
+          var sign = manualObstacleSigns[idx];
+          if (Math.abs(sign.x - x) <= half && Math.abs(sign.y - y) <= half) {
+            return idx;
+          }
+        }
+        return -1;
+      }
+
+      function toggleManualObstacleSign(x, y, color) {
+        var clampedX = clamp(x, TRACK_MIN_M, TRACK_MAX_M);
+        var clampedY = clamp(y, TRACK_MIN_M, TRACK_MAX_M);
+        var hitIdx = findManualObstacleSignIndex(clampedX, clampedY);
+        if (hitIdx >= 0) {
+          manualObstacleSigns.splice(hitIdx, 1);
+          return;
+        }
+        manualObstacleSigns.push({
+          x: clampedX,
+          y: clampedY,
+          color: color
+        });
+      }
+
+      function applyChallengeMode(mode) {
+        var nextMode = "open";
+        if (mode === "obstacle") {
+          nextMode = "obstacle";
+        } else if (mode === "obstacle_manual") {
+          nextMode = "obstacle_manual";
+        }
+        if (nextMode === challengeMode) {
+          return;
+        }
+
+        if (challengeMode === "open" && nextMode !== "open") {
+          savedOpenWallValues = getWallValues();
+        }
+
+        challengeMode = nextMode;
+        modeSelect.value = challengeMode;
+
+        if (challengeMode === "obstacle" || challengeMode === "obstacle_manual") {
+          wallConfigLabel.textContent = "Obstacle Challenge Settings";
+          if (challengeMode === "obstacle_manual") {
+            wallConfigLabel.textContent = "Obstacle Challenge (manual) Settings";
+          }
+          wallNote.textContent = "";
+          wallNote.style.display = "none";
+          obstacleRulesBtn.style.display = "inline-flex";
+          randomParkingRow.style.display = "flex";
+          randomObstaclesBtn.style.display = challengeMode === "obstacle" ? "" : "none";
+          clearObstaclesBtn.style.display = challengeMode === "obstacle_manual" ? "" : "none";
+          randomStartZoneRow.style.display = "none";
+          setWallValues({
+            top: String(OPEN_WALL_WIDE_M),
+            right: String(OPEN_WALL_WIDE_M),
+            bottom: String(OPEN_WALL_WIDE_M),
+            left: String(OPEN_WALL_WIDE_M)
+          });
+          setWallControlsDisabled(true);
+          wallGrid.style.display = "none";
+          randomStartZoneBtn.style.display = "none";
+          startZoneValue.style.display = "none";
+          randomizeObstacleParkingSide();
+          if (challengeMode === "obstacle") {
+            randomizeObstacleCards();
+          } else {
+            singleTrafficSignEl.style.display = "none";
+            obstacleCardScheme = null;
+            updateObstacleCardSignsOverlay();
+            updateObstacleCardsInfo();
+          }
+        } else {
+          wallConfigLabel.textContent = "Open Challenge Settings";
+          wallNote.textContent = "Per rules: each section is wide (1000 mm) or narrow (600 mm).";
+          wallNote.style.display = "block";
+          obstacleRulesBtn.style.display = "none";
+          randomParkingRow.style.display = "none";
+          randomObstaclesBtn.style.display = "none";
+          clearObstaclesBtn.style.display = "none";
+          randomStartZoneRow.style.display = "flex";
+          setWallValues(savedOpenWallValues);
+          setWallControlsDisabled(false);
+          wallGrid.style.display = "grid";
+          randomStartZoneBtn.style.display = "";
+          startZoneValue.style.display = "";
+          singleTrafficSignEl.style.display = "none";
+          obstacleCardScheme = null;
+          updateObstacleCardSignsOverlay();
+          updateObstacleCardsInfo();
+        }
+
+        updateWallOverlay();
+        ensureStartZoneValid();
       }
 
       function getZoneByDie(dieFace) {
@@ -691,21 +1487,46 @@
 
       function updateDirectionUi() {
         directionValue.textContent = "Direction: " + (driveDirection || "-");
+        if (challengeMode === "obstacle" || challengeMode === "obstacle_manual") {
+          startDirArrowEl.style.display = "none";
+          updateObstacleDirectionArrow();
+          return;
+        }
+
+        obstacleDirArrowEl.style.display = "none";
         if (!driveDirection) {
           startDirArrowEl.style.display = "none";
           return;
         }
+        var openSide = (startZone && startZone.side) ? startZone.side : OPEN_START_DEFAULT_SIDE;
+        var openAngle = getObstacleDirectionAngle(openSide, driveDirection);
         startDirArrowEl.style.display = "block";
-        startDirArrowEl.style.transform = "translate(-50%, -50%) rotate(" + (driveDirection === "CW" ? 180 : 0) + "deg)";
+        startDirArrowEl.style.transform = "translate(-50%, -50%) rotate(" + openAngle + "deg)";
       }
 
       function updateStartZoneOverlay() {
-        if (!startZone) {
+        if (challengeMode === "obstacle" || challengeMode === "obstacle_manual") {
           setStartZoneVisible(false);
           startZoneValue.textContent = "Bottom start zone: -";
+          var obstacleMetrics = getBoardMetrics();
+          updateObstacleDirectionArrow(obstacleMetrics);
+          updateSingleTrafficSignOverlay(obstacleMetrics);
+          updateObstacleCardSignsOverlay(obstacleMetrics);
+          updateObstacleCardsInfo();
           return;
         }
-        startZoneValue.textContent = "Bottom start zone: " + startZone.zone + " (die " + startZone.die + ")";
+
+        obstacleDirArrowEl.style.display = "none";
+        singleTrafficSignEl.style.display = "none";
+        updateObstacleCardSignsOverlay();
+        updateObstacleCardsInfo();
+        if (!startZone) {
+          setStartZoneVisible(false);
+          startZoneValue.textContent = randomStartZoneCheck.checked ? "Start zone: -" : "Bottom start zone: -";
+          return;
+        }
+        var startSide = startZone.side || OPEN_START_DEFAULT_SIDE;
+        startZoneValue.textContent = capitalizeWord(startSide) + " start zone: " + startZone.zone + " (die " + startZone.die + ")";
 
         var metrics = getBoardMetrics();
         if (!metrics) {
@@ -729,16 +1550,22 @@
 
       function randomizeStartZone() {
         var maxAttempts = 32;
+        var side = getRandomOpenStartSide();
         var attempt;
         for (attempt = 0; attempt < maxAttempts; attempt += 1) {
           var die = 1 + Math.floor(Math.random() * 6);
-          var zone = getZoneByDie(die);
-          if (!isZoneValidForBottomSection(zone)) {
+          var bottomZone = getZoneByDie(die);
+          if (!bottomZone) {
+            continue;
+          }
+          var zone = rotateStartZoneFromBottom(bottomZone, side);
+          if (!isStartZoneValidForSide(zone, side)) {
             continue;
           }
           startZone = {
             die: die,
-            zone: zone.zone,
+            zone: bottomZone.zone,
+            side: side,
             xMin: zone.xMin,
             yMin: zone.yMin,
             xMax: zone.xMax,
@@ -752,7 +1579,20 @@
       }
 
       function ensureStartZoneValid() {
-        if (!startZone || !isZoneValidForBottomSection(startZone)) {
+        if (challengeMode === "obstacle" || challengeMode === "obstacle_manual") {
+          setStartZoneVisible(false);
+          updateStartZoneOverlay();
+          return;
+        }
+        if (!startZone) {
+          randomizeStartZone();
+          return;
+        }
+        if (!randomStartZoneCheck.checked && (startZone.side || OPEN_START_DEFAULT_SIDE) !== OPEN_START_DEFAULT_SIDE) {
+          randomizeStartZone();
+          return;
+        }
+        if (!isStartZoneValidForSide(startZone, startZone.side || OPEN_START_DEFAULT_SIDE)) {
           randomizeStartZone();
           return;
         }
@@ -792,6 +1632,23 @@
           " L " + x1.toFixed(2) + " " + y2.toFixed(2) + " Z"
         );
         wallOverlay.appendChild(path);
+
+        if (challengeMode === "obstacle" || challengeMode === "obstacle_manual") {
+          var boundaryPx = Math.max(1, (OBSTACLE_BOUNDARY_WIDTH_M / FIELD_SIZE_M) * Math.min(m.width, m.height));
+          var parkingLayout = getObstacleParkingLayout(obstacleParkingSide);
+          parkingLayout.lines.forEach(function (lineM) {
+            var startNorm = fromMeters(lineM.x1, lineM.y1);
+            var endNorm = fromMeters(lineM.x2, lineM.y2);
+            var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("class", "obstacle-boundary-line");
+            line.setAttribute("stroke-width", boundaryPx.toFixed(2));
+            line.setAttribute("x1", (startNorm.normX * m.width).toFixed(2));
+            line.setAttribute("y1", (startNorm.normY * m.height).toFixed(2));
+            line.setAttribute("x2", (endNorm.normX * m.width).toFixed(2));
+            line.setAttribute("y2", (endNorm.normY * m.height).toFixed(2));
+            wallOverlay.appendChild(line);
+          });
+        }
       }
 
       function ensureInitialWallOverlay(attemptsLeft) {
@@ -984,6 +1841,26 @@
       }
 
       function handlePointerDown(ev) {
+        if (challengeMode === "obstacle_manual") {
+          if (ev.button !== 0 && ev.button !== 2) {
+            return;
+          }
+          ev.preventDefault();
+          var manualPoint = getPointFromEvent(ev);
+          if (!manualPoint) {
+            return;
+          }
+          hoverVisible = true;
+          lastHoverRawNorm = { normX: manualPoint.normX, normY: manualPoint.normY };
+          var manualSnapped = applySnap(manualPoint.normX, manualPoint.normY);
+          lastHoverNorm = { normX: manualSnapped.normX, normY: manualSnapped.normY };
+          showCross(manualSnapped.normX * manualPoint.areaWidth, manualSnapped.normY * manualPoint.areaHeight);
+          updateLiveFromNorm();
+          var manualMeters = toMeters(manualSnapped.normX, manualSnapped.normY);
+          toggleManualObstacleSign(manualMeters.x, manualMeters.y, ev.button === 2 ? "red" : "green");
+          updateStartZoneOverlay();
+          return;
+        }
         var point = getPointFromEvent(ev);
         if (!point) {
           return;
@@ -1001,6 +1878,11 @@
       board.addEventListener("pointermove", handlePointerMove);
       board.addEventListener("pointerleave", handlePointerLeave);
       board.addEventListener("pointerdown", handlePointerDown);
+      board.addEventListener("contextmenu", function (ev) {
+        if (challengeMode === "obstacle_manual") {
+          ev.preventDefault();
+        }
+      });
       sizeMode.addEventListener("click", function (ev) {
         var target = ev.target;
         if (!target.classList.contains("size-btn")) {
@@ -1015,16 +1897,29 @@
 
       [wallTopSelect, wallRightSelect, wallBottomSelect, wallLeftSelect].forEach(function (el) {
         el.addEventListener("change", function () {
+          if (challengeMode === "open") {
+            savedOpenWallValues = getWallValues();
+          }
           updateWallOverlay();
           ensureStartZoneValid();
         });
       });
 
       randomWallsBtn.addEventListener("click", function () {
-        randomizeOpenWalls();
-        updateWallOverlay();
-        randomizeStartZone();
+        if (challengeMode === "open") {
+          randomizeOpenWalls();
+          savedOpenWallValues = getWallValues();
+          updateWallOverlay();
+          randomizeStartZone();
+        } else if (challengeMode === "obstacle_manual") {
+          randomizeObstacleParkingSide();
+          updateWallOverlay();
+        } else {
+          randomizeObstacleCards();
+          updateWallOverlay();
+        }
         randomizeDirection();
+        updateStartZoneOverlay();
       });
 
       randomStartZoneBtn.addEventListener("click", function () {
@@ -1033,6 +1928,49 @@
 
       randomDirectionBtn.addEventListener("click", function () {
         randomizeDirection();
+      });
+
+      randomObstaclesBtn.addEventListener("click", function () {
+        if (challengeMode !== "obstacle") {
+          return;
+        }
+        randomizeObstacleCards();
+        updateWallOverlay();
+        updateStartZoneOverlay();
+      });
+
+      clearObstaclesBtn.addEventListener("click", function () {
+        if (challengeMode !== "obstacle_manual") {
+          return;
+        }
+        manualObstacleSigns = [];
+        updateStartZoneOverlay();
+      });
+
+      randomParkingCheck.addEventListener("change", function () {
+        if (challengeMode !== "obstacle" && challengeMode !== "obstacle_manual") {
+          return;
+        }
+        if (!randomParkingCheck.checked) {
+          obstacleParkingSide = OBSTACLE_PARKING_DEFAULT_SIDE;
+          updateWallOverlay();
+          updateStartZoneOverlay();
+        }
+      });
+
+      randomStartZoneCheck.addEventListener("change", function () {
+        if (challengeMode !== "open") {
+          return;
+        }
+        ensureStartZoneValid();
+      });
+
+      obstacleRulesBtn.addEventListener("click", function () {
+        window.open("rules-obstacle-p15.png", "_blank", "noopener");
+      });
+
+      modeSelect.addEventListener("change", function () {
+        applyChallengeMode(modeSelect.value);
       });
 
       unitSelect.addEventListener("change", function () {
@@ -1061,8 +1999,10 @@
 
       setSizeMode("s");
       randomizeOpenWalls();
+      savedOpenWallValues = getWallValues();
       randomizeStartZone();
       randomizeDirection();
+      applyChallengeMode(modeSelect.value);
       updateWallOverlay();
       ensureInitialWallOverlay(40);
       updatePointsCount();
